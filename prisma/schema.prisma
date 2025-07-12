@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  password      String
+  points        Int       @default(50)
+  isAdmin       Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+
+  items         Item[]
+  swapsRequested Swap[]   @relation("SwapRequester")
+  swapsOwned    Swap[]    @relation("SwapOwner")
+  
+  @@map("users")
+}
+
+model Item {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  category    String
+  size        String
+  condition   String
+  brand       String?
+  images      String[] 
+  pointValue  Int      @default(25)
+  status      String   @default("available") 
+  isApproved  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  swaps       Swap[]
+  
+  @@map("items")
+}
+
+model Swap {
+  id        String   @id @default(cuid())
+  status    String   @default("pending") 
+  message   String?
+  pointsUsed Int     @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+
+  requesterId String
+  requester   User   @relation("SwapRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  
+  ownerId     String
+  owner       User   @relation("SwapOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  
+  itemId      String
+  item        Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  
+  @@map("swaps")
+}
