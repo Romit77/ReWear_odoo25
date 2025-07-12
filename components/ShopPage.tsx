@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Item } from "@/types";
 import { ChevronDown, ChevronUp, Search, ShoppingCart } from "lucide-react";
 
@@ -9,6 +10,7 @@ interface ShopPageProps {
 }
 
 export default function ShopPage({ initialItems = [] }: ShopPageProps) {
+  const router = useRouter();
   const [items, setItems] = useState<Item[]>(initialItems);
   const [filteredItems, setFilteredItems] = useState<Item[]>(initialItems);
   const [loading, setLoading] = useState(false);
@@ -153,6 +155,17 @@ export default function ShopPage({ initialItems = [] }: ShopPageProps) {
     setSelectedConditions([]);
     setPriceRange([0, 1000]);
     setSearchTerm("");
+  };
+
+  // Navigate to item detail page
+  const handleItemClick = (itemId: string) => {
+    router.push(`/shop/item/${itemId}`);
+  };
+
+  // Handle swap button click (prevent event bubbling)
+  const handleSwapClick = (e: React.MouseEvent, itemId: string) => {
+    e.stopPropagation();
+    router.push(`/shop/item/${itemId}`);
   };
 
   // Extract unique values for filters
@@ -410,7 +423,8 @@ export default function ShopPage({ initialItems = [] }: ShopPageProps) {
                 {filteredItems.slice(0, itemsPerPage).map((item) => (
                   <div
                     key={item.id}
-                    className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                    onClick={() => handleItemClick(item.id)}
+                    className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
                   >
                     <div className="relative h-48 bg-gray-200">
                       {item.images && item.images.length > 0 ? (
@@ -443,7 +457,10 @@ export default function ShopPage({ initialItems = [] }: ShopPageProps) {
                         <span className="capitalize">{item.condition}</span>
                         {item.brand && <span>{item.brand}</span>}
                       </div>
-                      <button className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2">
+                      <button
+                        onClick={(e) => handleSwapClick(e, item.id)}
+                        className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2"
+                      >
                         <ShoppingCart className="h-4 w-4" />
                         <span>Request Swap</span>
                       </button>
