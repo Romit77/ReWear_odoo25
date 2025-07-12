@@ -41,7 +41,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -92,7 +91,7 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   const [admin, setAdmin] = useState({
     id: "admin1",
@@ -123,8 +122,10 @@ export default function AdminPanel() {
   };
 
   useEffect(() => {
-    fetchPendingItems();
-  }, []);
+    if (session?.user?.isAdmin) {
+      fetchPendingItems();
+    }
+  }, [session]);
 
   const handleItemApproval = async (itemId: string, isApproved: boolean) => {
     try {
@@ -202,6 +203,43 @@ export default function AdminPanel() {
     },
   };
 
+  // Check if user is authenticated and an admin
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-gray-900/95 backdrop-blur-sm flex justify-center items-center">
+        <motion.div
+          className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        ></motion.div>
+      </div>
+    );
+  }
+
+  if (!session || !session.user?.isAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-900/95 backdrop-blur-sm flex flex-col justify-center items-center text-gray-200">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center"
+        >
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent mb-4">
+            Access Denied
+          </h1>
+          <p className="text-gray-400 mb-6">You do not have permission to access the admin panel.</p>
+          <Link href="/">
+            <Button className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-2 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+              Return to Home
+            </Button>
+          </Link>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-900/95 backdrop-blur-sm text-gray-200">
       {/* Navbar */}
@@ -235,7 +273,7 @@ export default function AdminPanel() {
               <Avatar className="h-12 w-12 cursor-pointer hover:ring-2 hover:ring-emerald-400 transition-all duration-300">
                 <AvatarImage src="https://github.com/shadcn.png" alt="Admin" />
                 <AvatarFallback className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
-                  AD
+                  {session.user?.name?.slice(0, 2).toUpperCase() || "AD"}
                 </AvatarFallback>
               </Avatar>
             </motion.div>
@@ -267,15 +305,9 @@ export default function AdminPanel() {
             <FaUser className="mr-2 text-emerald-400" /> Admin Details
           </h2>
           <div className="flex flex-col md:flex-row items-center gap-6">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-            >
+            <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.3 }}>
               <Avatar className="h-24 w-24 border-4 border-gray-700 shadow-lg">
-                <AvatarImage
-                  src="https://i.pravatar.cc/100?img=1"
-                  alt={admin.name}
-                />
+                <AvatarImage src="https://i.pravatar.cc/100?img=1" alt={admin.name} />
                 <AvatarFallback className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
                   {admin.name.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
@@ -283,23 +315,13 @@ export default function AdminPanel() {
             </motion.div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
               <div>
-                <p className="text-gray-300">
-                  <strong>ID:</strong> {admin.id}
-                </p>
-                <p className="text-gray-300">
-                  <strong>Name:</strong> {admin.name}
-                </p>
-                <p className="text-gray-300">
-                  <strong>Email:</strong> {admin.email}
-                </p>
+                <p className="text-gray-300"><strong>ID:</strong> {admin.id}</p>
+                <p className="text-gray-300"><strong>Name:</strong> {admin.name}</p>
+                <p className="text-gray-300"><strong>Email:</strong> {admin.email}</p>
               </div>
               <div>
-                <p className="text-gray-300">
-                  <strong>Points:</strong> {admin.points}
-                </p>
-                <p className="text-gray-300">
-                  <strong>Admin Status:</strong> {admin.isAdmin ? "Yes" : "No"}
-                </p>
+                <p className="text-gray-300"><strong>Points:</strong> {admin.points}</p>
+                <p className="text-gray-300"><strong>Admin Status:</strong> {admin.isAdmin ? "Yes" : "No"}</p>
               </div>
             </div>
           </div>
@@ -328,8 +350,7 @@ export default function AdminPanel() {
           className="bg-gray-800/95 backdrop-blur-sm p-6 rounded-xl shadow-2xl border border-gray-700/50"
         >
           <h2 className="text-2xl font-semibold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent mb-6 flex items-center">
-            <FaShoppingBag className="mr-2 text-emerald-400" /> Pending Items
-            for Approval
+            <FaShoppingBag className="mr-2 text-emerald-400" /> Pending Items for Approval
           </h2>
 
           {loading ? (
@@ -365,9 +386,7 @@ export default function AdminPanel() {
                       <CardHeader>
                         <div className="flex justify-between items-start">
                           <div>
-                            <CardTitle className="text-lg text-gray-200">
-                              {item.title}
-                            </CardTitle>
+                            <CardTitle className="text-lg text-gray-200">{item.title}</CardTitle>
                             <CardDescription className="text-gray-400">
                               By {item.user.name} ({item.user.email})
                             </CardDescription>
@@ -421,10 +440,7 @@ export default function AdminPanel() {
                         </div>
 
                         <div className="flex space-x-3 mt-4">
-                          <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                             <Button
                               className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
                               onClick={() => handleItemApproval(item.id, true)}
@@ -433,10 +449,7 @@ export default function AdminPanel() {
                               <FaCheck className="mr-2" /> Approve
                             </Button>
                           </motion.div>
-                          <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                             <Button
                               className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white"
                               onClick={() => handleItemApproval(item.id, false)}
@@ -447,10 +460,7 @@ export default function AdminPanel() {
                           </motion.div>
                           <Dialog>
                             <DialogTrigger asChild>
-                              <motion.div
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                              >
+                              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                                 <Button
                                   className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
                                   onClick={() => setSelectedItem(item)}
@@ -474,91 +484,44 @@ export default function AdminPanel() {
                                 >
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                      <p className="text-gray-300">
-                                        <strong>ID:</strong> {selectedItem.id}
-                                      </p>
-                                      <p className="text-gray-300">
-                                        <strong>Title:</strong>{" "}
-                                        {selectedItem.title}
-                                      </p>
-                                      <p className="text-gray-300">
-                                        <strong>Category:</strong>{" "}
-                                        {selectedItem.category}
-                                      </p>
-                                      <p className="text-gray-300">
-                                        <strong>Size:</strong>{" "}
-                                        {selectedItem.size}
-                                      </p>
-                                      <p className="text-gray-300">
-                                        <strong>Condition:</strong>{" "}
-                                        {selectedItem.condition}
-                                      </p>
-                                      <p className="text-gray-300">
-                                        <strong>Point Value:</strong>{" "}
-                                        {selectedItem.pointValue}
-                                      </p>
-                                      <p className="text-gray-300">
-                                        <strong>Status:</strong>{" "}
-                                        {selectedItem.status}
-                                      </p>
+                                      <p className="text-gray-300"><strong>ID:</strong> {selectedItem.id}</p>
+                                      <p className="text-gray-300"><strong>Title:</strong> {selectedItem.title}</p>
+                                      <p className="text-gray-300"><strong>Category:</strong> {selectedItem.category}</p>
+                                      <p className="text-gray-300"><strong>Size:</strong> {selectedItem.size}</p>
+                                      <p className="text-gray-300"><strong>Condition:</strong> {selectedItem.condition}</p>
+                                      <p className="text-gray-300"><strong>Point Value:</strong> {selectedItem.pointValue}</p>
+                                      <p className="text-gray-300"><strong>Status:</strong> {selectedItem.status}</p>
                                     </div>
                                     <div>
-                                      <p className="text-gray-300">
-                                        <strong>Owner:</strong>{" "}
-                                        {selectedItem.user.name}
-                                      </p>
-                                      <p className="text-gray-300">
-                                        <strong>Email:</strong>{" "}
-                                        {selectedItem.user.email}
-                                      </p>
-                                      <p className="text-gray-300">
-                                        <strong>Created:</strong>{" "}
-                                        {new Date(
-                                          selectedItem.createdAt
-                                        ).toLocaleString()}
-                                      </p>
-                                      <p className="text-gray-300">
-                                        <strong>Updated:</strong>{" "}
-                                        {new Date(
-                                          selectedItem.updatedAt
-                                        ).toLocaleString()}
-                                      </p>
+                                      <p className="text-gray-300"><strong>Owner:</strong> {selectedItem.user.name}</p>
+                                      <p className="text-gray-300"><strong>Email:</strong> {selectedItem.user.email}</p>
+                                      <p className="text-gray-300"><strong>Created:</strong> {new Date(selectedItem.createdAt).toLocaleString()}</p>
+                                      <p className="text-gray-300"><strong>Updated:</strong> {new Date(selectedItem.updatedAt).toLocaleString()}</p>
                                     </div>
                                   </div>
                                   {selectedItem.description && (
                                     <div>
-                                      <p className="text-gray-300">
-                                        <strong>Description:</strong>
-                                      </p>
-                                      <p className="text-gray-400 mt-1">
-                                        {selectedItem.description}
-                                      </p>
+                                      <p className="text-gray-300"><strong>Description:</strong></p>
+                                      <p className="text-gray-400 mt-1">{selectedItem.description}</p>
                                     </div>
                                   )}
-                                  {selectedItem.images &&
-                                    selectedItem.images.length > 0 && (
-                                      <div>
-                                        <p className="text-gray-300">
-                                          <strong>Images:</strong>
-                                        </p>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
-                                          {selectedItem.images.map(
-                                            (image, index) => (
-                                              <motion.img
-                                                key={index}
-                                                src={image}
-                                                alt={`${selectedItem.title} ${
-                                                  index + 1
-                                                }`}
-                                                className="w-full h-32 object-cover rounded-lg border-2 border-gray-700"
-                                                whileHover={{ scale: 1.05 }}
-                                                transition={{ duration: 0.3 }}
-                                              />
-                                            )
-                                          )}
-                                        </div>
+                                  {selectedItem.images && selectedItem.images.length > 0 && (
+                                    <div>
+                                      <p className="text-gray-300"><strong>Images:</strong></p>
+                                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                                        {selectedItem.images.map((image, index) => (
+                                          <motion.img
+                                            key={index}
+                                            src={image}
+                                            alt={`${selectedItem.title} ${index + 1}`}
+                                            className="w-full h-32 object-cover rounded-lg border-2 border-gray-700"
+                                            whileHover={{ scale: 1.05 }}
+                                            transition={{ duration: 0.3 }}
+                                          />
+                                        ))}
                                       </div>
-                                    )}
+                                    </div>
+                                  )}
                                 </motion.div>
                               )}
                             </DialogContent>
