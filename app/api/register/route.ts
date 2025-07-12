@@ -14,7 +14,6 @@ export async function POST(request: Request) {
       },
     });
 
-    // ✅ Add a response here
     return new Response(JSON.stringify({ success: true, user: dbResponse }), {
       status: 201,
       headers: { "Content-Type": "application/json" },
