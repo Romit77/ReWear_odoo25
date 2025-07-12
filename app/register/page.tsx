@@ -26,6 +26,11 @@ export default function LoginPage() {
             },
             body: JSON.stringify({ email, password , name }),
         });
+
+        if(response.ok){
+           router.push("/login");
+        }
+
     } catch (error) {
         setError("Something went wrong in register page.");
     }
