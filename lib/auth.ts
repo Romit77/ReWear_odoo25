@@ -1,39 +1,43 @@
-import { NextAuthOptions } from 'next-auth'
-import CredentialsProvider from 'next-auth/providers/credentials'
-import bcrypt from 'bcryptjs'
-import { db } from './db'
+import { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
+import { db } from "./db";
 
 export const authOptions: NextAuthOptions = {
   session: {
-    strategy: 'jwt',
+    strategy: "jwt",
   },
   pages: {
-    signIn: '/login',
+    signIn: "/login",
   },
   providers: [
     CredentialsProvider({
-      name: 'credentials',
+      name: "credentials",
       credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          return null
+          return null;
         }
 
         const user = await db.user.findUnique({
           where: { email: credentials.email },
-        })
+        });
+        console.log("User found:", user);
 
         if (!user) {
-          return null
+          return null;
         }
 
-        const isValid = await bcrypt.compare(credentials.password, user.password)
+        const isValid = await bcrypt.compare(
+          credentials.password,
+          user.password
+        );
 
         if (!isValid) {
-          return null
+          return null;
         }
 
         return {
@@ -41,37 +45,37 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           isAdmin: user.isAdmin,
-        }
+        };
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.isAdmin = user.isAdmin
+        token.isAdmin = user.isAdmin;
       }
-      return token
+      return token;
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.sub!
-        session.user.isAdmin = token.isAdmin as boolean
+        session.user.id = token.sub!;
+        session.user.isAdmin = token.isAdmin as boolean;
       }
-      return session
+      return session;
     },
   },
-}
+};
 
-declare module 'next-auth' {
+declare module "next-auth" {
   interface User {
-    isAdmin: boolean
+    isAdmin: boolean;
   }
   interface Session {
     user: {
-      id: string
-      email: string
-      name: string
-      isAdmin: boolean
-    }
+      id: string;
+      email: string;
+      name: string;
+      isAdmin: boolean;
+    };
   }
 }
