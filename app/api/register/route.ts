@@ -5,7 +5,8 @@ export async function POST(request: Request) {
   const { email, password, name }: User = await request.json();
 
   try {
-    const dbResponse = await db.User.create({
+    const dbResponse = await db.user.create({
+      // lowercase `user`
       data: {
         email,
         password,
@@ -13,6 +14,11 @@ export async function POST(request: Request) {
       },
     });
 
+    // ✅ Add a response here
+    return new Response(JSON.stringify({ success: true, user: dbResponse }), {
+      status: 201,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("Error In register route", error);
     return new Response("Internal Server Error", { status: 500 });
