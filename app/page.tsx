@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Button } from "./components/ui/Button";
-import { Navbar } from "./components/layout/Navbar";
+import { Button } from "@/components/ui/button";
+import { Navbar } from "../components/Navbar";
 
 export default function HomePage() {
   return (
